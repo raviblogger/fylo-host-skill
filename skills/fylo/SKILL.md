@@ -11,7 +11,7 @@ Fylo.Host hosts static sites on Cloudflare's edge (330+ cities, ~100 ms TTFB). O
 
 Read `FYLO_API_KEY` from the environment. If it is not set, stop and ask the user for one — do not guess or search for it in files:
 
-> I need a Fylo.Host API key. Create one at https://fylo.host/dashboard (Settings → API keys), then either `export FYLO_API_KEY=fylo_live_...` or paste it here.
+> I need a Fylo.Host API key. Create one at https://fylo.host/dashboard/api, then either `export FYLO_API_KEY=fylo_live_...` or paste it here.
 
 Keys look like `fylo_live_` followed by 32 characters. Never print the key back to the user or write it into project files. A pasted key can be used for the current session only.
 

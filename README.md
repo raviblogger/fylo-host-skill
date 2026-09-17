@@ -12,7 +12,7 @@ Or copy `skills/fylo/` into your agent's skills directory.
 
 ## Use
 
-Get an API key at https://fylo.host/dashboard (Settings → API keys), then:
+Get an API key at https://fylo.host/dashboard/api, then:
 
 ```bash
 export FYLO_API_KEY=fylo_live_...
