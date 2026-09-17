@@ -15,16 +15,18 @@ Read `FYLO_API_KEY` from the environment. If it is not set, stop and ask the use
 
 Keys look like `fylo_live_` followed by 32 characters. Never print the key back to the user or write it into project files. A pasted key can be used for the current session only.
 
-## 2. Prepare the page
+## 2. Prepare the site
 
-v1 publishes **one self-contained HTML file**. Before publishing:
+Two shapes are accepted:
 
-- Inline all CSS and JavaScript into the HTML (`<style>` and `<script>` blocks). External `https://` links to CDNs and Google Fonts are fine; relative `./style.css` or `./app.js` references are not — they will 404.
-- Images: use absolute `https://` URLs or data: URIs. Local image files are not uploaded.
-- React / JSX / anything needing a build step: build it first, then inline the output, or rewrite it as plain HTML+JS.
-- Keep the file under 10 MB.
+- **Single page** — `{"html": "<complete document>"}`. Inline the CSS and JS; images as `https://` URLs or data URIs. Max 10 MB. Works on every plan for both create and update.
+- **Multi-file site** — `{"files": [{"path": "index.html", "content": "..."}, {"path": "css/app.css", "content": "..."}, {"path": "img/logo.png", "content": "<base64>", "encoding": "base64"}]}`. Text files as strings, binaries (png/jpg/webp/woff2/pdf…) as base64 with `"encoding": "base64"`. Paths are relative to the site root, no leading `/` or `..`. Must include at least one `.html`; `index.html` is the entry page. Up to 2,000 files and 20 MB per request. Creating works on every plan; **updating** a site with `files` needs a paid plan (free accounts get `402 plan_limit` — use `html` for single-page updates there).
 
-If the project is genuinely multi-file (several pages, an assets folder) tell the user: "Fylo's API currently takes a single HTML file. I can inline everything into one page, or you can upload the folder as a ZIP at https://fylo.host." Do not try to zip and upload yourself.
+Prefer `files` whenever the project has more than one file: relative links, stylesheets and images then work exactly as they do locally. Use `scripts/publish-dir.sh <dir>` to build the payload from a folder (skips `.git`, `node_modules`, dotfiles, `.fylo.json`).
+
+React / JSX / anything needing a build step: run the build first and publish the output folder (`dist`, `build`, `out`). Never publish source that the browser cannot run.
+
+Sites over 20 MB: tell the user to upload a ZIP at https://fylo.host instead.
 
 ## 3. Publish (new site)
 
@@ -35,7 +37,7 @@ curl -s https://fylo.host/api/v1/sites \
   --data-binary @payload.json
 ```
 
-where `payload.json` is `{"html": "<the whole file as a JSON string>", "subdomain": "optional-slug"}`. Build the JSON with a real serializer (`jq -Rs`, Python `json.dumps`, Node `JSON.stringify`) — never by string concatenation. Helper: `scripts/publish.sh index.html [subdomain]`.
+where `payload.json` is `{"html": ..., "subdomain": "optional-slug"}` or `{"files": [...], "subdomain": "optional-slug"}`. Build the JSON with a real serializer (`jq -Rs`, Python `json.dumps`, Node `JSON.stringify`) — never by string concatenation. Helpers: `scripts/publish.sh index.html [subdomain]` for one file, `scripts/publish-dir.sh <dir> [subdomain]` for a folder.
 
 - `subdomain` is optional: 1–40 lowercase letters, digits and hyphens. Omit it and Fylo picks one. Suggest a short, relevant slug derived from the page title when the user has not given one.
 - Success is `201` with `{ "id", "subdomain", "url", "status", "created_at", "expires_at" }`. Show the user the `url` and open it if you can.
@@ -53,7 +55,7 @@ curl -s -X PUT https://fylo.host/api/v1/sites/<id> \
   --data-binary @payload.json
 ```
 
-Same body shape (`html` only). Returns `200` with the site object; the URL stays the same and the edge cache is rebuilt automatically.
+Same body shapes as create. Returns `200` with the site object; the URL stays the same and the edge cache is rebuilt automatically.
 
 To find sites when there is no `.fylo.json`: `GET /api/v1/sites` returns `{ "sites": [...] }` for the key's account.
 
@@ -64,10 +66,12 @@ To find sites when there is no `.fylo.json`: `GET /api/v1/sites` returns `{ "sit
 | 401 | `unauthenticated` | Key missing, wrong, or revoked → step 1 |
 | 400 | `missing_html` / `invalid_subdomain` | Fix the payload; check the slug rule |
 | 409 | `subdomain_taken` | Try another slug (append a short suffix), or omit `subdomain` |
-| 402 | `plan_limit` | The account's project limit is reached. Update an existing site (step 4) or tell the user to delete one / upgrade at https://fylo.host/#pricing. Do not retry. |
+| 402 | `plan_limit` | Project limit reached, or a `files` update on the free plan. Update an existing site with `html`, or tell the user to delete a site / upgrade at https://fylo.host/#pricing. Do not retry unchanged. |
 | 413 | `too_large` | Page over 10 MB — strip inlined images |
 | 429 | `rate_limited` | 30 requests/min per key; wait 60 s |
-| 501 | `multi_file_not_supported` | See step 2 |
+| 400 | `invalid_path` / `duplicate_path` / `invalid_content` | Fix the `files` entry named in the message |
+| 422 | `rejected` | A file was blocked by moderation (executables, pirated-media names). Remove it |
+| 502 | `partial_publish` | Site exists with only its entry page; the response includes `site`. Retry the same `files` with `PUT /sites/<site.id>` |
 
 Errors are JSON: `{ "error": { "code", "message" } }`.
 

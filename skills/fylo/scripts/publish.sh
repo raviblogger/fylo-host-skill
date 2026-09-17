@@ -6,7 +6,7 @@
 set -euo pipefail
 FILE="${1:?usage: publish.sh <file.html> [subdomain]}"
 SUB="${2:-}"
-: "${FYLO_API_KEY:?FYLO_API_KEY is not set — create one at https://fylo.host/dashboard}"
+: "${FYLO_API_KEY:?FYLO_API_KEY is not set — create one at https://fylo.host/dashboard/api}"
 API="https://fylo.host/api/v1"
 STATE="$(dirname "$FILE")/.fylo.json"
 

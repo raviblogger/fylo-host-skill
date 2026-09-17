@@ -20,7 +20,7 @@ export FYLO_API_KEY=fylo_live_...
 
 and tell your agent: *"publish this to Fylo"*. It will call `POST https://fylo.host/api/v1/sites`, show you the URL, and remember the site id in `.fylo.json` so the next "publish" updates the same URL.
 
-Manual: `skills/fylo/scripts/publish.sh index.html [subdomain]`.
+Manual: `skills/fylo/scripts/publish.sh index.html [subdomain]` (one file) or `skills/fylo/scripts/publish-dir.sh ./dist [subdomain]` (a folder).
 
 ## API
 
