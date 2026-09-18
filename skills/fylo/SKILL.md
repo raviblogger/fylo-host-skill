@@ -61,7 +61,7 @@ To find sites when there is no `.fylo.json`: `GET /api/v1/sites` returns `{ "sit
 
 ## 4b. Version history (undo a bad publish)
 
-Every update saves the previous site as a version (free 3, starter 5, pro 20, business 24). If a publish broke something, roll back instead of re-uploading:
+Every update saves the previous site as a version (free 3, starter 5, pro 20, business 24). Versions count against the plan's storage; the oldest are removed automatically when a new one needs room, so publishing is never blocked by them. If a publish broke something, roll back instead of re-uploading:
 
 ```bash
 curl -s https://fylo.host/api/v1/sites/<id>/versions -H "Authorization: Bearer $FYLO_API_KEY"
