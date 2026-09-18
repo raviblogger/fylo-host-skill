@@ -5,7 +5,7 @@
 # Needs: FYLO_API_KEY, curl, python3. Skips .git, node_modules, dotfiles and .fylo.json.
 set -euo pipefail
 DIR="${1:?usage: publish-dir.sh <dir> [subdomain]}"; SUB="${2:-}"
-: "${FYLO_API_KEY:?FYLO_API_KEY is not set — create one at https://fylo.host/dashboard/api}"
+: "${FYLO_API_KEY:?FYLO_API_KEY is not set — create one at https://fylo.host/dashboard/settings/api}"
 API="https://fylo.host/api/v1"; STATE="$DIR/.fylo.json"; TMP="$(mktemp)"
 python3 - "$DIR" "$SUB" > "$TMP" << 'PY'
 import json, os, sys, base64

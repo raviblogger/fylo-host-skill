@@ -11,7 +11,7 @@ Fylo.Host hosts static sites on Cloudflare's edge (330+ cities, ~100 ms TTFB). O
 
 Read `FYLO_API_KEY` from the environment. If it is not set, stop and ask the user for one — do not guess or search for it in files:
 
-> I need a Fylo.Host API key. Create one at https://fylo.host/dashboard/api, then either `export FYLO_API_KEY=fylo_live_...` or paste it here.
+> I need a Fylo.Host API key. Create one at https://fylo.host/dashboard/settings/api, then either `export FYLO_API_KEY=fylo_live_...` or paste it here.
 
 Keys look like `fylo_live_` followed by 32 characters. Never print the key back to the user or write it into project files. A pasted key can be used for the current session only.
 
@@ -58,6 +58,19 @@ curl -s -X PUT https://fylo.host/api/v1/sites/<id> \
 Same body shapes as create. Returns `200` with the site object; the URL stays the same and the edge cache is rebuilt automatically.
 
 To find sites when there is no `.fylo.json`: `GET /api/v1/sites` returns `{ "sites": [...] }` for the key's account.
+
+## 4b. Version history (undo a bad publish)
+
+Every update saves the previous site as a version (free 3, starter 5, pro 20, business 24). If a publish broke something, roll back instead of re-uploading:
+
+```bash
+curl -s https://fylo.host/api/v1/sites/<id>/versions -H "Authorization: Bearer $FYLO_API_KEY"
+# → {"limit":20,"versions":[{"id":"v_...","created_at":1758000000,"source":"api","files":12,"bytes":348112,"pages":3}, ...]}
+curl -s -X POST https://fylo.host/api/v1/sites/<id>/restore -H "Authorization: Bearer $FYLO_API_KEY" \
+  -H "Content-Type: application/json" -d '{"version_id":"v_..."}'
+```
+
+Restore keeps the URL, rebuilds the cache and saves the current content as a new version first, so it is reversible. Tell the user which version you restored (time + source).
 
 ## 5. Errors and what to do
 
